@@ -25,27 +25,25 @@
 
 		return () => clearTimeout(timeLimitTimeout);
 	});
+
+	const getLetterWasDamaged = (letter: string) =>
+		gameState.previouslyDamagedLetters.includes(letter);
 </script>
 
 {#if gameState.gameOver === true}
-	<div class="flex h-screen w-screen items-center justify-center">
-		<div class="text-4xl">Game Over</div>
+	<div class="game-over-container">
+		<div class="game-over-message">Game Over</div>
 	</div>
 {:else}
-	<div class="flex h-screen w-screen">
+	<div class="root">
 		<!-- Letter Health Sidebar -->
-		<div class="flex h-full flex-shrink-0 flex-col justify-between pl-2">
+		<div class="sidebar">
 			{#each letters as letter}
-				<div class="flex">
-					<div class="mr-2">
+				<div class={cx('letter-row', getLetterWasDamaged(letter) && 'damaged')}>
+					<div>
 						{letter}
 					</div>
-					<div
-						class={cx(
-							'flex',
-							gameState.previouslyDamagedLetters.includes(letter) && 'damaged-health'
-						)}
-					>
+					<div class="health-container">
 						{#each basicNumberArray(LETTER_STARTING_HEALTH) as i}
 							<i
 								class={cx(
@@ -59,24 +57,20 @@
 			{/each}
 		</div>
 
-		<div class="flex h-full w-full flex-col items-center justify-between">
+		<div class="main">
 			<!-- Current Word -->
-			<div class="flex h-36 w-full flex-col items-center justify-center gap-2">
-				<div class="flex">
+			<div class="top">
+				<div class="target-word-container">
 					{#each localTargetWord.split('') as letter}
-						<div class="flex h-8 w-8 items-center justify-center font-mono text-4xl font-bold">
-							<div>{letter.toUpperCase()}</div>
+						<div class="letter">
+							{letter.toUpperCase()}
 						</div>
 					{/each}
 				</div>
 
 				<!-- Progress Bar -->
 				{#key localTargetWord}
-					<div
-						id="progress"
-						class="h-2 w-48 bg-black"
-						style="--time-left: {gameState.timeLeftMs}ms"
-					></div>
+					<div class="progress" style="--time-left: {gameState.timeLeftMs}ms"></div>
 				{/key}
 			</div>
 
@@ -86,15 +80,12 @@
 					e.preventDefault();
 					gameState.submitWord();
 				}}
-				class="flex items-center justify-center py-16"
+				class="bottom"
 			>
 				<input
 					type="text"
-					class={cx(
-						'rounded-md border-2 p-4 text-lg',
-						!!gameState.wordSubmissionError && 'border-red-500 text-red-500'
-					)}
-					bind:value={() => gameState.inputValue, (v) => gameState.setInputValue(v)}
+					class={cx('input', !!gameState.wordSubmissionError && 'error')}
+					bind:value={gameState.inputValue}
 				/>
 			</form>
 		</div>
@@ -134,13 +125,115 @@
 		}
 	}
 
-	#progress {
+	.game-over-container {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+
+		height: 100vh;
+		width: 100vw;
+	}
+
+	.game-over-message {
+		font-size: 64px;
+	}
+
+	.root {
+		display: flex;
+		width: 100vw;
+		height: 100vh;
+	}
+
+	.sidebar {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		height: 100%;
+		flex-shrink: 0;
+		padding-left: 8px;
+	}
+
+	.letter-row {
+		display: flex;
+		gap: 8px;
+	}
+
+	.letter-row .health-container {
+		display: flex;
+	}
+
+	.letter-row.damaged {
+		animation: shakeX 200ms linear;
+		animation-fill-mode: forwards;
+	}
+
+	.main {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		align-items: center;
+
+		width: 100%;
+		height: 100%;
+	}
+
+	.main .top {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		gap: 8px;
+
+		height: 144px;
+		width: 100%;
+	}
+
+	.target-word-container {
+		display: flex;
+	}
+
+	.target-word-container .letter {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+
+		--size: 32px;
+		width: var(--size);
+		height: var(--size);
+
+		font-family: monospace;
+		font-size: 32px;
+		font-weight: bold;
+	}
+
+	.progress {
+		height: 8px;
+		width: 192px;
+		background-color: black;
+
 		animation: progress var(--time-left) linear;
 		animation-fill-mode: forwards;
 	}
 
-	.damaged-health {
-		animation: shakeX 200ms linear;
-		animation-fill-mode: forwards;
+	.bottom {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+
+		--py: 64px;
+		padding-top: var(--py);
+		padding-bottom: var(--py);
+	}
+
+	.input {
+		padding: 16px;
+		border-radius: 16px;
+		border: 2px solid gray;
+		font-size: 16px;
+	}
+
+	.input.error {
+		border-color: red;
+		color: red;
 	}
 </style>
