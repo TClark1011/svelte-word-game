@@ -4,11 +4,20 @@
 
 A word appears on the screen, you have to type in a word that uses as many letters from that word as possible, and then a new word will be selected. Any letters from the original word that you did not use in your submission lose a health point. Once a letter has lost all it's health points, you can no longer use it in your submissions. The game ends when you run out of time. Your submission cannot be a subset of the target word, eg; if the target word is "apples" you cannot submit "apple".
 
+## Todo
+
+- [ ] Submission animation
+- [ ] Word Change animation
+- [x] Dynamic progress bar width based on time remaining
+- [ ] Show used words
+- [ ] Make submission blocks more clear
+
 ## Ideas
 
 - **Multiplayer:** Players take turns submitting words, when a player submits a word it becomes the target word for the other players.
 - **Perfect Word Reward:** Give some kind of reward if the player submits a word that uses all the letters in the target word.
-- **Clickable Keyboard:** Write by clicking on a keyboard instead of typing, will make it much easier to indicate dead letters and levels the playing field between touch and keyboard users.
+- **Clickable Keyboard:** Write by clicking on a keyboard instead of typing, will make it much easier to indicate dead letters and levels the playing field between touch and keyboard users. Could also show the health of each letter on the keyboard.
+- **Learning:** Encourage education by showing definitions of words. After the game we could also show some instances where you took damage and suggest perfect words that used all the letters and show their definitions.
 
 ## Word List
 

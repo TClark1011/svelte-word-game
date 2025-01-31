@@ -1,6 +1,6 @@
 import { LETTER_STARTING_HEALTH, STARTING_TIME_MS, SUCCESS_BONUS_MS, WORDS } from '$lib/config';
 import { letters } from '$lib/misc-constants';
-import { dedupe, randomItem } from '$lib/utils';
+import { dedupe, randomItemConditional } from '$lib/utils';
 
 type WordSubmissionError = 'invalid' | 'already-used' | 'dead-letter-used' | 'subset-of-target';
 
@@ -18,7 +18,7 @@ const getInitialLetterHealth = (): LetterHealthTracker => {
 
 export class GameState {
 	letterHealth: LetterHealthTracker = $state(getInitialLetterHealth());
-	targetWord: string = $state(randomItem(WORDS));
+	targetWord: string = $state('');
 	wordSubmissionError: WordSubmissionError | null = $state(null);
 	inputValue: string = $state('');
 	timeLeftMs: number = $state(STARTING_TIME_MS);
@@ -26,6 +26,10 @@ export class GameState {
 	usedWords: string[] = $state([]);
 	gameOver: boolean = $state(false);
 	previouslyDamagedLetters: string[] = $state([]);
+
+	constructor(startIndex: number) {
+		this.targetWord = WORDS[startIndex];
+	}
 
 	private damageLetter(letter: string) {
 		const currentHealth = this.letterHealth[letter];
@@ -40,13 +44,6 @@ export class GameState {
 		}
 
 		this.letterHealth[letter] = newHealth;
-	}
-
-	useWordAtIndex(index: number) {
-		const word = WORDS[index];
-		if (!word) throw new Error(`No word found at index ${index}`);
-
-		this.targetWord = word;
 	}
 
 	setInputValue(value: string) {
@@ -92,13 +89,16 @@ export class GameState {
 
 		this.previouslyDamagedLetters = damagedLetters;
 
-		const remainingTime = this.timeLeftMs - (new Date().getTime() - this.lastSubmitAtMs);
-		this.timeLeftMs = remainingTime + SUCCESS_BONUS_MS;
+		const timeSinceLastSubmissionMs = new Date().getTime() - this.lastSubmitAtMs;
+		const remainingTimeMs = this.timeLeftMs - timeSinceLastSubmissionMs;
+		this.timeLeftMs = remainingTimeMs + SUCCESS_BONUS_MS;
+
+		this.usedWords.push(this.inputValue, this.targetWord);
+
+		this.targetWord = randomItemConditional(WORDS, (word) => !this.usedWords.includes(word));
 
 		this.wordSubmissionError = null;
-		this.targetWord = randomItem(WORDS);
 		this.lastSubmitAtMs = new Date().getTime();
-		this.usedWords.push(this.inputValue);
 		this.inputValue = '';
 	}
 
@@ -106,5 +106,3 @@ export class GameState {
 		this.gameOver = true;
 	}
 }
-
-export const gameState = new GameState();
