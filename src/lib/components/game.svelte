@@ -5,12 +5,13 @@
 	import { basicNumberArray } from '$lib/utils';
 	import cx from 'classnames';
 
-	const gameState = gameContext.get();
+	const gameState = gameContext.getEssential();
 
 	$effect(() => {
+		let timeSinceLastSubmit = new Date().getTime() - gameState.lastSubmitAtMs;
 		let timeLimitTimeout = setTimeout(() => {
 			gameState.endGame();
-		}, gameState.timeLeftMs);
+		}, gameState.timeLeftMs - timeSinceLastSubmit);
 
 		return () => clearTimeout(timeLimitTimeout);
 	});
