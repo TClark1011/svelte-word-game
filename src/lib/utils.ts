@@ -9,3 +9,6 @@ export const randomItem = <T>(arr: T[]): T => {
 export const basicNumberArray = (length: number) => Array.from({ length }, (_, i) => i);
 
 export const dedupe = <T>(arr: T[]): T[] => Array.from(new Set(arr));
+
+export const randomInt = (min: number, max: number) =>
+	Math.floor(Math.random() * (max - min + 1)) + min;

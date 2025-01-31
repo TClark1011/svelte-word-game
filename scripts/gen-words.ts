@@ -42,3 +42,4 @@ console.log(`${validWords.length}/${allWords.length} have been selected`);
 
 // write the valid words to a new file
 fs.writeFileSync('src/lib/words.json', JSON.stringify(validWords));
+fs.writeFileSync('src/lib/word-count.json', JSON.stringify(validWords.length));

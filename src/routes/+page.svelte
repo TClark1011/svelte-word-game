@@ -1,30 +1,29 @@
 <script lang="ts">
-	import { LETTER_STARTING_HEALTH } from '$lib/config';
-	import { gameState, gameStateDispatch, type GameState } from '$lib/game-state.svelte';
+	import { LETTER_STARTING_HEALTH, WORDS } from '$lib/config';
+	import { gameState, type GameState } from '$lib/game-state.svelte';
 	import { letters } from '$lib/misc-constants';
 	import { basicNumberArray } from '$lib/utils';
 	import cx from 'classnames';
+	import { onMount } from 'svelte';
+
+	let { data } = $props();
 
 	// Only render the game on the client
-	let currentWord = $state('');
-	$effect(() => {
-		currentWord = gameState.currentWord;
+	let localTargetWord = $state(WORDS[data.wordIndex]);
+	onMount(() => {
+		gameState.useWordAtIndex(data.wordIndex);
 	});
 
-	const applyTimeout = (getGameState: () => GameState) => {
-		const state = getGameState();
-
-		return setTimeout(() => {
-			gameStateDispatch({
-				type: 'game-over'
-			});
-		}, state.timeLeftMs);
-	};
-
-	let timeout = setTimeout(() => {});
 	$effect(() => {
-		clearTimeout(timeout);
-		timeout = applyTimeout(() => gameState);
+		localTargetWord = gameState.targetWord;
+	});
+
+	$effect(() => {
+		let timeLimitTimeout = setTimeout(() => {
+			gameState.endGame();
+		}, gameState.timeLeftMs);
+
+		return () => clearTimeout(timeLimitTimeout);
 	});
 </script>
 
@@ -41,7 +40,12 @@
 					<div class="mr-2">
 						{letter}
 					</div>
-					<div class="flex">
+					<div
+						class={cx(
+							'flex',
+							gameState.previouslyDamagedLetters.includes(letter) && 'damaged-health'
+						)}
+					>
 						{#each basicNumberArray(LETTER_STARTING_HEALTH) as i}
 							<i
 								class={cx(
@@ -59,7 +63,7 @@
 			<!-- Current Word -->
 			<div class="flex h-36 w-full flex-col items-center justify-center gap-2">
 				<div class="flex">
-					{#each currentWord.split('') as letter}
+					{#each localTargetWord.split('') as letter}
 						<div class="flex h-8 w-8 items-center justify-center font-mono text-4xl font-bold">
 							<div>{letter.toUpperCase()}</div>
 						</div>
@@ -67,22 +71,20 @@
 				</div>
 
 				<!-- Progress Bar -->
-				{#if currentWord}
+				{#key localTargetWord}
 					<div
 						id="progress"
 						class="h-2 w-48 bg-black"
 						style="--time-left: {gameState.timeLeftMs}ms"
 					></div>
-				{/if}
+				{/key}
 			</div>
 
 			<!-- Input -->
 			<form
 				onsubmit={(e) => {
 					e.preventDefault();
-					gameStateDispatch({
-						type: 'submit-word'
-					});
+					gameState.submitWord();
 				}}
 				class="flex items-center justify-center py-16"
 			>
@@ -90,12 +92,9 @@
 					type="text"
 					class={cx(
 						'rounded-md border-2 p-4 text-lg',
-						(gameState.error === 'invalid-word-submission' ||
-							gameState.error === 'already-used-word' ||
-							gameState.error === 'dead-letter-used') &&
-							'border-red-500 text-red-500'
+						!!gameState.wordSubmissionError && 'border-red-500 text-red-500'
 					)}
-					bind:value={gameState.inputValue}
+					bind:value={() => gameState.inputValue, (v) => gameState.setInputValue(v)}
 				/>
 			</form>
 		</div>
@@ -103,6 +102,29 @@
 {/if}
 
 <style>
+	@keyframes shakeX {
+		/* Source: https://github.com/animate-css/animate.css/blob/main/source/attention_seekers/shakeX.css */
+		from,
+		to {
+			transform: translate3d(0, 0, 0);
+		}
+
+		10%,
+		30%,
+		50%,
+		70%,
+		90% {
+			transform: translate3d(-10px, 0, 0);
+		}
+
+		20%,
+		40%,
+		60%,
+		80% {
+			transform: translate3d(10px, 0, 0);
+		}
+	}
+
 	@keyframes progress {
 		from {
 			transform: scaleX(1);
@@ -114,6 +136,11 @@
 
 	#progress {
 		animation: progress var(--time-left) linear;
+		animation-fill-mode: forwards;
+	}
+
+	.damaged-health {
+		animation: shakeX 200ms linear;
 		animation-fill-mode: forwards;
 	}
 </style>
