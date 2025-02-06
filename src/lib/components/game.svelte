@@ -1,13 +1,13 @@
 <script lang="ts">
+	import Keyboard from '$lib/components/keyboard.svelte';
 	import { LETTER_STARTING_HEALTH, STARTING_TIME_MS } from '$lib/config';
 	import { gameContext } from '$lib/contexts.svelte';
-	import { letters } from '$lib/misc-constants';
-	import { basicNumberArray } from '$lib/utils';
 	import cx from 'classnames';
 
 	const gameState = gameContext.getEssential();
 
 	$effect(() => {
+		// End the game if the time limit is reached
 		let timeSinceLastSubmit = new Date().getTime() - gameState.lastSubmitAtMs;
 		let timeLimitTimeout = setTimeout(() => {
 			gameState.endGame();
@@ -15,12 +15,6 @@
 
 		return () => clearTimeout(timeLimitTimeout);
 	});
-
-	const getLetterWasDamaged = (letter: string) =>
-		gameState.previouslyDamagedLetters.includes(letter);
-
-	const letterHeartIsEmpty = (letter: string, heartIndex: number) =>
-		(gameState.letterHealth[letter] ?? 0) < heartIndex + 1;
 
 	let progressBarWidth = $derived.by(() => {
 		const progressBarBaseWidth = 192;
@@ -35,22 +29,6 @@
 	</div>
 {:else}
 	<div class="root">
-		<!-- Letter Health Sidebar -->
-		<div class="sidebar">
-			{#each letters as letter}
-				<div class={cx('letter-health-row', getLetterWasDamaged(letter) && 'damaged')}>
-					<div>
-						{letter}
-					</div>
-					<div class="health-container">
-						{#each basicNumberArray(LETTER_STARTING_HEALTH) as i}
-							<i class={cx('nes-icon heart', letterHeartIsEmpty(letter, i) && 'is-empty')}></i>
-						{/each}
-					</div>
-				</div>
-			{/each}
-		</div>
-
 		<div class="main">
 			<div class="top">
 				<div class="target-word-container">
@@ -78,10 +56,36 @@
 				}}
 				class="bottom"
 			>
+				<!-- svelte-ignore a11y_autofocus -->
 				<input
 					type="text"
 					class={cx('input', !!gameState.wordSubmissionError && 'error')}
 					bind:value={gameState.inputValue}
+					inputmode="none"
+					autofocus
+				/>
+				<Keyboard
+					letterHealth={gameState.letterHealth}
+					maxLetterHealth={LETTER_STARTING_HEALTH}
+					shouldBeDisabled={(key) => {
+						if (key.case !== 'letter' && gameState.inputValue.length === 0) return true;
+						if (key.case !== 'letter') return false;
+
+						return gameState.letterIsDead(key.letter);
+					}}
+					onkey={(key) => {
+						switch (key.case) {
+							case 'letter':
+								gameState.sendLetter(key.letter);
+								break;
+							case 'backspace':
+								gameState.backspace();
+								break;
+							case 'enter':
+								gameState.submitWord();
+								break;
+						}
+					}}
 				/>
 			</form>
 		</div>
@@ -140,29 +144,6 @@
 		height: 100vh;
 	}
 
-	.sidebar {
-		display: flex;
-		flex-direction: column;
-		justify-content: space-between;
-		height: 100%;
-		flex-shrink: 0;
-		padding-left: 8px;
-	}
-
-	.letter-health-row {
-		display: flex;
-		gap: 8px;
-	}
-
-	.letter-health-row .health-container {
-		display: flex;
-	}
-
-	.letter-health-row.damaged {
-		animation: shakeX 200ms linear;
-		animation-fill-mode: forwards;
-	}
-
 	.main {
 		display: flex;
 		flex-direction: column;
@@ -213,12 +194,11 @@
 
 	.main .bottom {
 		display: flex;
-		justify-content: center;
+		flex-direction: column;
 		align-items: center;
+		gap: 16px;
 
-		--py: 64px;
-		padding-top: var(--py);
-		padding-bottom: var(--py);
+		padding-bottom: 32px;
 	}
 
 	.input {

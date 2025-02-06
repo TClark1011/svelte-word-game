@@ -39,6 +39,6 @@ export const randomItemConditional = <T>(
 	);
 };
 
-export const basicNumberArray = (length: number) => Array.from({ length }, (_, i) => i);
+export const range = (length: number) => Array.from({ length }, (_, i) => i);
 
 export const dedupe = <T>(arr: T[]): T[] => Array.from(new Set(arr));

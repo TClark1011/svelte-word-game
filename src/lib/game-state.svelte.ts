@@ -4,7 +4,7 @@ import { dedupe, randomItemConditional } from '$lib/utils';
 
 type WordSubmissionError = 'invalid' | 'already-used' | 'dead-letter-used' | 'subset-of-target';
 
-type LetterHealthTracker = Record<string, number>;
+export type LetterHealthTracker = Record<string, number>;
 
 const getInitialLetterHealth = (): LetterHealthTracker => {
 	const letterHealth: LetterHealthTracker = {};
@@ -46,8 +46,20 @@ export class GameState {
 		this.letterHealth[letter] = newHealth;
 	}
 
+	sendLetter = (letter: string) => {
+		this.setInputValue(this.inputValue + letter);
+	};
+
+	backspace = () => {
+		this.setInputValue(this.inputValue.slice(0, -1));
+	};
+
 	setInputValue(value: string) {
 		this.inputValue = value.toLowerCase();
+	}
+
+	letterIsDead(letter: string) {
+		return this.letterHealth[letter] === 0;
 	}
 
 	submitWord() {

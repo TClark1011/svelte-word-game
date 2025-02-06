@@ -9,5 +9,6 @@ export const composeContextHelpers = <Data>(key: string) => ({
 		}
 		return getContext<Data>(key);
 	},
-	set: (data: Data) => setContext(key, data)
+	set: (data: Data) => setContext(key, data),
+	has: () => hasContext(key)
 });
