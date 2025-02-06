@@ -23,7 +23,8 @@ export class GameState {
 	inputValue: string = $state('');
 	timeLeftMs: number = $state(STARTING_TIME_MS);
 	lastSubmitAtMs: number = $state(new Date().getTime());
-	usedWords: string[] = $state([]);
+	usedTargetWords: string[] = $state([]);
+	submittedWords: string[] = $state([]);
 	gameOver: boolean = $state(false);
 	previouslyDamagedLetters: string[] = $state([]);
 
@@ -39,11 +40,13 @@ export class GameState {
 		}
 
 		const newHealth = currentHealth - 1;
-		if (newHealth < 0) {
-			throw new Error(`Attempted to reduce health of letter "${letter}" below 0`);
+		if (newHealth >= 0) {
+			this.letterHealth[letter] = newHealth;
 		}
+	}
 
-		this.letterHealth[letter] = newHealth;
+	get usedWords() {
+		return [...this.usedTargetWords, ...this.submittedWords];
 	}
 
 	sendLetter = (letter: string) => {
@@ -105,7 +108,8 @@ export class GameState {
 		const remainingTimeMs = this.timeLeftMs - timeSinceLastSubmissionMs;
 		this.timeLeftMs = remainingTimeMs + SUCCESS_BONUS_MS;
 
-		this.usedWords.push(this.inputValue, this.targetWord);
+		this.usedTargetWords.push(this.targetWord);
+		this.submittedWords.push(this.inputValue);
 
 		this.targetWord = randomItemConditional(WORDS, (word) => !this.usedWords.includes(word));
 

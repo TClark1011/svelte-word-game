@@ -60,21 +60,22 @@
 					onclick={(e) => onkey?.(key, e)}
 					onmousedown={(e) => e.preventDefault()}
 				>
-					<div></div>
-					{#if key.case === 'letter'}
-						{key.letter}
-					{:else if key.case === 'backspace'}
-						←
-					{:else if key.case === 'enter'}
-						↵
-					{/if}
-					{#if key.case === 'letter'}
-						<div class="health-icons">
-							{#each range(maxLetterHealth) as i}
-								<i class={['nes-icon heart is-small', letterHealth[key.letter] <= i && 'is-empty']}
-								></i>
-							{/each}
+					<div class="inner">
+						<div class="letter">
+							{#if key.case === 'letter'}
+								{key.letter}
+							{:else if key.case === 'backspace'}
+								←
+							{:else if key.case === 'enter'}
+								↵
+							{/if}
 						</div>
+					</div>
+					{#if key.case === 'letter' && !isDisabled}
+						<div
+							class="health-bar"
+							style:--health-percentage={(letterHealth[key.letter] / maxLetterHealth) * 100 + '%'}
+						></div>
 					{/if}
 				</button>
 			{/each}
@@ -85,12 +86,12 @@
 <style>
 	.keyboard,
 	.row {
-		gap: 4px;
+		gap: 12px;
 	}
 
 	.keyboard {
-		--second-row-offset: 16px;
-		--third-row-offset: calc(var(--second-row-offset) * 2);
+		--second-row-offset: 8px;
+		--third-row-offset: calc(var(--second-row-offset) * 1.5);
 
 		display: flex;
 		flex-direction: column;
@@ -113,9 +114,49 @@
 	.key {
 		display: flex;
 		flex-direction: column;
+		justify-content: space-between;
+		/* align-items: center; */
+
+		padding: 0;
+		margin: 0;
+	}
+
+	.key .inner {
+		display: flex;
+		justify-content: center;
 		align-items: center;
+
 		flex: 1;
 		padding: 1rem;
+	}
+
+	@media (max-width: 768px) {
+		.key .inner {
+			padding: 0.5rem;
+		}
+
+		.key .letter {
+			font-size: 0.75rem;
+		}
+	}
+
+	@media (max-width: 480px) {
+		.key .inner {
+			padding: 0.35rem;
+		}
+
+		.key .letter {
+			font-size: 0.5rem;
+		}
+	}
+
+	.health-bar {
+		--gutter: 4px;
+		position: relative;
+		left: calc(var(--gutter) * -1);
+		width: calc(var(--health-percentage) + var(--gutter));
+		height: 4px;
+		background-color: red;
 	}
 
 	.health-icons {

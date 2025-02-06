@@ -11,7 +11,7 @@ A word appears on the screen, you have to type in a word that uses as many lette
 - [ ] Submission animation
 - [ ] Word Change animation
 - [x] Dynamic progress bar width based on time remaining
-- [ ] Show used words
+- [x] Show used words
 - [ ] Make submission blocks more clear
 - [ ] End game screen (score, words used)
 
