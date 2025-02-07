@@ -3,7 +3,7 @@ import { LETTER_STARTING_HEALTH, STARTING_TIME_MS, SUCCESS_BONUS_MS, WORDS } fro
 import { letters } from '$lib/misc-constants';
 import { dedupe, randomItem, randomItemConditional } from '$lib/utils';
 
-type WordSubmissionError = 'invalid' | 'already-used' | 'dead-letter-used';
+type WordSubmissionError = 'invalid' | 'already-used' | 'dead-letter-used' | 'same-as-target';
 
 export type LetterHealthTracker = Record<string, number>;
 
@@ -112,6 +112,11 @@ export class GameState {
 	}
 
 	submitWord() {
+		if (this.inputValue.toLowerCase() === this.targetWord.toLowerCase()) {
+			this.wordSubmissionError = 'same-as-target';
+			return;
+		}
+
 		const wordIsValid = WORDS.includes(this.inputValue);
 
 		if (!wordIsValid) {
