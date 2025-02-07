@@ -10,7 +10,7 @@
 		// End the game when time runs out
 		let timeSinceLastSubmit = new Date().getTime() - gameState.lastSubmitAtMs;
 		let timeLimitTimeout = setTimeout(() => {
-			gameState.endGame();
+			gameState.timeoutGameOver();
 		}, gameState.timeLeftMs - timeSinceLastSubmit);
 
 		return () => clearTimeout(timeLimitTimeout);
@@ -25,7 +25,8 @@
 	const LAST_WORDS_TO_SHOW = 5;
 	let recentWords = $derived(
 		R.pipe(gameState.submittedWords, R.reverse(), R.take(LAST_WORDS_TO_SHOW + 1))
-	);
+	); // We include an extra item so we can animate the last item out
+	let recentWordsAreFull = $derived(recentWords.length > LAST_WORDS_TO_SHOW);
 </script>
 
 <div class="root">
@@ -48,8 +49,8 @@
 
 		<div class="previous-words">
 			{#each recentWords as word, i (word)}
-				{@const isLastOfFull = recentWords.length > LAST_WORDS_TO_SHOW && i === LAST_WORDS_TO_SHOW}
-				<div style:--index={i} class={['word', isLastOfFull && 'vanishing']}>{word}</div>
+				{@const isExiting = recentWordsAreFull && i === LAST_WORDS_TO_SHOW}
+				<div style:--index={i} class={['word', isExiting && 'vanishing']}>{word}</div>
 			{/each}
 		</div>
 	</div>

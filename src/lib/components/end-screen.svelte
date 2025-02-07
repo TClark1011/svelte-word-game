@@ -9,11 +9,13 @@
 		<h1>Game Over</h1>
 		<div class="nes-container is-rounded">Score: {gameState.submittedWords.length}</div>
 		<button class="nes-btn is-primary" onclick={() => gameState.restartGame()}>Try Again</button>
-		<div class="used-words nes-container is-rounded">
-			{#each gameState.submittedWords as word, i (word)}
-				<div style:--index={i}>{word}</div>
-			{/each}
-		</div>
+		{#if gameState.submittedWords.length > 0}
+			<div class="used-words nes-container is-rounded">
+				{#each gameState.submittedWords as word, i (word)}
+					<div style:--index={i}>{word}</div>
+				{/each}
+			</div>
+		{/if}
 	</div>
 </div>
 

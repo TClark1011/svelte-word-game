@@ -1,3 +1,4 @@
+import { browser } from '$app/environment';
 import { LETTER_STARTING_HEALTH, STARTING_TIME_MS, SUCCESS_BONUS_MS, WORDS } from '$lib/config';
 import { letters } from '$lib/misc-constants';
 import { dedupe, randomItem, randomItemConditional } from '$lib/utils';
@@ -16,6 +17,20 @@ const getInitialLetterHealth = (): LetterHealthTracker => {
 	return letterHealth;
 };
 
+const DEV_ENABLE_TIME_LIMIT_STORAGE_KEY = 'dev_enableTimeLimit';
+const DEV_ENABLE_LETTER_DAMAGE_STORAGE_KEY = 'dev_enableLetterDamage';
+
+const getStorageKeyBoolValue = (key: string): boolean | null => {
+	if (!browser) return null;
+	const fromStorage = sessionStorage.getItem(key);
+	if (fromStorage === null) return null;
+
+	if (fromStorage === 'true') return true;
+	if (fromStorage === 'false') return false;
+
+	throw new Error(`Invalid value in storage for key ${key}`);
+};
+
 export class GameState {
 	letterHealth: LetterHealthTracker = $state(getInitialLetterHealth());
 	targetWord: string = $state('');
@@ -28,6 +43,11 @@ export class GameState {
 	gameOver: boolean = $state(false);
 	previouslyDamagedLetters: string[] = $state([]);
 
+	dev_enableTimeLimit = $state(getStorageKeyBoolValue(DEV_ENABLE_TIME_LIMIT_STORAGE_KEY) ?? true);
+	dev_enableLetterDamage = $state(
+		getStorageKeyBoolValue(DEV_ENABLE_LETTER_DAMAGE_STORAGE_KEY) ?? true
+	);
+
 	constructor(startIndex: number) {
 		this.targetWord = WORDS[startIndex];
 
@@ -38,9 +58,26 @@ export class GameState {
 			this.inputValue; // make the effect track the input value
 			this.wordSubmissionError = null;
 		});
+
+		$effect(() => {
+			if (!browser) return;
+			sessionStorage.setItem(
+				DEV_ENABLE_TIME_LIMIT_STORAGE_KEY,
+				this.dev_enableTimeLimit.toString()
+			);
+		});
+
+		$effect(() => {
+			if (!browser) return;
+			sessionStorage.setItem(
+				DEV_ENABLE_LETTER_DAMAGE_STORAGE_KEY,
+				this.dev_enableLetterDamage.toString()
+			);
+		});
 	}
 
 	private damageLetter(letter: string) {
+		if (!this.dev_enableLetterDamage) return;
 		const currentHealth = this.letterHealth[letter];
 
 		if (currentHealth === undefined) {
@@ -121,7 +158,8 @@ export class GameState {
 		this.inputValue = '';
 	}
 
-	endGame() {
+	timeoutGameOver() {
+		if (!this.dev_enableTimeLimit) return;
 		this.gameOver = true;
 	}
 
