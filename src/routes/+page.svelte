@@ -2,6 +2,7 @@
 	import { dev } from '$app/environment';
 	import EndScreen from '$lib/components/end-screen.svelte';
 	import Game from '$lib/components/game.svelte';
+	import Rules from '$lib/components/rules.svelte';
 	import { gameContext } from '$lib/contexts.svelte';
 	import { GameState } from '$lib/game-state.svelte';
 
@@ -18,8 +19,10 @@
 	{/await}
 {/if}
 
-{#if !gameState.gameOver}
+{#if gameState.mode === 'rules'}
+	<Rules />
+{:else if gameState.mode === 'game'}
 	<Game />
-{:else}
+{:else if gameState.mode === 'end'}
 	<EndScreen />
 {/if}

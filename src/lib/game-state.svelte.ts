@@ -3,6 +3,7 @@ import { LETTER_STARTING_HEALTH, STARTING_TIME_MS, SUCCESS_BONUS_MS, WORDS } fro
 import { letters } from '$lib/misc-constants';
 import { dedupe, randomItem, randomItemConditional } from '$lib/utils';
 
+type Mode = 'rules' | 'game' | 'end';
 type WordSubmissionError = 'invalid' | 'already-used' | 'dead-letter-used' | 'same-as-target';
 
 export type LetterHealthTracker = Record<string, number>;
@@ -40,8 +41,8 @@ export class GameState {
 	lastSubmitAtMs: number = $state(new Date().getTime());
 	usedTargetWords: string[] = $state([]);
 	submittedWords: string[] = $state([]);
-	gameOver: boolean = $state(false);
 	previouslyDamagedLetters: string[] = $state([]);
+	mode: Mode = $state('rules');
 
 	dev_enableTimeLimit = $state(getStorageKeyBoolValue(DEV_ENABLE_TIME_LIMIT_STORAGE_KEY) ?? true);
 	dev_enableLetterDamage = $state(
@@ -165,11 +166,11 @@ export class GameState {
 
 	timeoutGameOver() {
 		if (!this.dev_enableTimeLimit) return;
-		this.gameOver = true;
+		this.mode = 'end';
 	}
 
-	restartGame() {
-		this.gameOver = false;
+	beginGame() {
+		this.mode = 'game';
 		this.letterHealth = getInitialLetterHealth();
 		this.targetWord = randomItem(WORDS);
 		this.usedTargetWords = [];
