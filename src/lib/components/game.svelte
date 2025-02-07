@@ -2,20 +2,19 @@
 	import Keyboard from '$lib/components/keyboard.svelte';
 	import { LETTER_STARTING_HEALTH, STARTING_TIME_MS } from '$lib/config';
 	import { gameContext } from '$lib/contexts.svelte';
-	import cx from 'classnames';
 	import * as R from 'remeda';
 
 	const gameState = gameContext.getEssential();
 
-	// $effect(() => {
-	// 	// End the game if the time limit is reached
-	// 	let timeSinceLastSubmit = new Date().getTime() - gameState.lastSubmitAtMs;
-	// 	let timeLimitTimeout = setTimeout(() => {
-	// 		gameState.endGame();
-	// 	}, gameState.timeLeftMs - timeSinceLastSubmit);
+	$effect(() => {
+		// End the game when time runs out
+		let timeSinceLastSubmit = new Date().getTime() - gameState.lastSubmitAtMs;
+		let timeLimitTimeout = setTimeout(() => {
+			gameState.endGame();
+		}, gameState.timeLeftMs - timeSinceLastSubmit);
 
-	// 	return () => clearTimeout(timeLimitTimeout);
-	// });
+		return () => clearTimeout(timeLimitTimeout);
+	});
 
 	let progressBarWidth = $derived.by(() => {
 		const progressBarBaseWidth = 192;
@@ -23,110 +22,81 @@
 		return progressBarBaseWidth * percentageTimeRemaining;
 	});
 
-	let previousWords = $derived(R.pipe(gameState.submittedWords, R.reverse(), R.take(5)));
-
-	$effect(() => {
-		console.log({ previousWords });
-	});
+	const LAST_WORDS_TO_SHOW = 5;
+	let recentWords = $derived(
+		R.pipe(gameState.submittedWords, R.reverse(), R.take(LAST_WORDS_TO_SHOW + 1))
+	);
 </script>
 
-{#if gameState.gameOver === true}
-	<div class="game-over-container">
-		<div class="game-over-message">Game Over</div>
-	</div>
-{:else}
-	<div class="root">
-		<div class="top">
-			<div class="target-word-container">
-				{#each gameState.targetWord.split('') as letter}
-					<div class="letter">
-						{letter.toUpperCase()}
-					</div>
-				{/each}
-			</div>
-
-			{#key gameState.timeLeftMs}
-				<div
-					class="progress-bar"
-					style:--time-left="{gameState.timeLeftMs}ms"
-					style:--width="{progressBarWidth}px"
-				></div>
-			{/key}
-
-			<div class="previous-words">
-				{#each previousWords as word, i (word)}
-					<div style:--index={i} class="word">{word}</div>
-				{/each}
-			</div>
+<div class="root">
+	<div class="top">
+		<div class="target-word-container">
+			{#each gameState.targetWord.split('') as letter}
+				<div class="letter">
+					{letter.toUpperCase()}
+				</div>
+			{/each}
 		</div>
 
-		<!-- Input -->
-		<form
-			onsubmit={(e) => {
-				e.preventDefault();
-				gameState.submitWord();
-			}}
-			class="bottom"
-		>
-			<!-- svelte-ignore a11y_autofocus -->
-			<input
-				type="text"
-				class={cx('input', !!gameState.wordSubmissionError && 'error')}
-				bind:value={gameState.inputValue}
-				inputmode="none"
-				autofocus
-			/>
-			<Keyboard
-				letterHealth={gameState.letterHealth}
-				maxLetterHealth={LETTER_STARTING_HEALTH}
-				shouldBeDisabled={(key) => {
-					if (key.case !== 'letter' && gameState.inputValue.length === 0) return true;
-					if (key.case !== 'letter') return false;
+		{#key gameState.timeLeftMs}
+			<div
+				class="progress-bar"
+				style:--time-left="{gameState.timeLeftMs}ms"
+				style:--width="{progressBarWidth}px"
+			></div>
+		{/key}
 
-					return gameState.letterIsDead(key.letter);
-				}}
-				onkey={(key) => {
-					switch (key.case) {
-						case 'letter':
-							gameState.sendLetter(key.letter);
-							break;
-						case 'backspace':
-							gameState.backspace();
-							break;
-						case 'enter':
-							gameState.submitWord();
-							break;
-					}
-				}}
-			/>
-		</form>
+		<div class="previous-words">
+			{#each recentWords as word, i (word)}
+				{@const isLastOfFull = recentWords.length > LAST_WORDS_TO_SHOW && i === LAST_WORDS_TO_SHOW}
+				<div style:--index={i} class={['word', isLastOfFull && 'vanishing']}>{word}</div>
+			{/each}
+		</div>
 	</div>
-{/if}
+
+	<!-- Input -->
+	<form
+		onsubmit={(e) => {
+			e.preventDefault();
+			gameState.submitWord();
+		}}
+		class="bottom"
+	>
+		<!-- svelte-ignore a11y_autofocus -->
+		<input
+			type="text"
+			class={['input nes-input', !!gameState.wordSubmissionError && 'is-error']}
+			bind:value={gameState.inputValue}
+			inputmode="none"
+			autofocus
+		/>
+		<Keyboard
+			letterHealth={gameState.letterHealth}
+			maxLetterHealth={LETTER_STARTING_HEALTH}
+			shouldBeDisabled={(key) => {
+				if (key.case !== 'letter' && gameState.inputValue.length === 0) return true;
+				if (key.case !== 'letter') return false;
+
+				return gameState.letterIsDead(key.letter);
+			}}
+			onkey={(key) => {
+				switch (key.case) {
+					case 'letter':
+						gameState.sendLetter(key.letter);
+						break;
+					case 'backspace':
+						gameState.backspace();
+						break;
+					case 'enter':
+						gameState.submitWord();
+						break;
+				}
+			}}
+		/>
+	</form>
+</div>
 
 <style>
-	@keyframes shakeX {
-		/* Source: https://github.com/animate-css/animate.css/blob/main/source/attention_seekers/shakeX.css */
-		from,
-		to {
-			transform: translate3d(0, 0, 0);
-		}
-
-		10%,
-		30%,
-		50%,
-		70%,
-		90% {
-			transform: translate3d(-10px, 0, 0);
-		}
-
-		20%,
-		40%,
-		60%,
-		80% {
-			transform: translate3d(10px, 0, 0);
-		}
-	}
-
 	@keyframes progress {
 		from {
 			transform: scaleX(1);
@@ -134,19 +104,6 @@
 		to {
 			transform: scaleX(0);
 		}
-	}
-
-	.game-over-container {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-
-		height: 100vh;
-		width: 100vw;
-	}
-
-	.game-over-message {
-		font-size: 64px;
 	}
 
 	.root {
@@ -202,6 +159,7 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		margin-top: 16px;
 	}
 
 	.previous-words .word {
@@ -210,7 +168,13 @@
 		opacity: 0.5;
 		transform: translateY(calc(var(--index) * 32px));
 
-		transition: transform 0.5s;
+		transition:
+			transform 0.5s,
+			opacity 0.5s;
+	}
+
+	.previous-words .word.vanishing {
+		opacity: 0;
 	}
 
 	.bottom {
@@ -218,19 +182,19 @@
 		flex-direction: column;
 		align-items: center;
 		gap: 16px;
+		width: 100%;
 
 		padding-bottom: 32px;
 	}
 
 	.input {
-		padding: 16px;
-		border-radius: 16px;
-		border: 2px solid gray;
+		width: 100%;
+		max-width: 24rem;
 		font-size: 16px;
+		outline: none;
 	}
 
-	.input.error {
-		border-color: red;
-		color: red;
+	.input.is-error {
+		color: #ce372b; /* Same color used in NES.css */
 	}
 </style>

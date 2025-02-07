@@ -1,8 +1,8 @@
 import { LETTER_STARTING_HEALTH, STARTING_TIME_MS, SUCCESS_BONUS_MS, WORDS } from '$lib/config';
 import { letters } from '$lib/misc-constants';
-import { dedupe, randomItemConditional } from '$lib/utils';
+import { dedupe, randomItem, randomItemConditional } from '$lib/utils';
 
-type WordSubmissionError = 'invalid' | 'already-used' | 'dead-letter-used' | 'subset-of-target';
+type WordSubmissionError = 'invalid' | 'already-used' | 'dead-letter-used';
 
 export type LetterHealthTracker = Record<string, number>;
 
@@ -30,6 +30,14 @@ export class GameState {
 
 	constructor(startIndex: number) {
 		this.targetWord = WORDS[startIndex];
+
+		$effect(() => {
+			// clear the error when the input value changes
+
+			// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+			this.inputValue; // make the effect track the input value
+			this.wordSubmissionError = null;
+		});
 	}
 
 	private damageLetter(letter: string) {
@@ -49,6 +57,11 @@ export class GameState {
 		return [...this.usedTargetWords, ...this.submittedWords];
 	}
 
+	setInputValue(value: string) {
+		this.inputValue = value.toLowerCase();
+		// this.wordSubmissionError = null;
+	}
+
 	sendLetter = (letter: string) => {
 		this.setInputValue(this.inputValue + letter);
 	};
@@ -56,10 +69,6 @@ export class GameState {
 	backspace = () => {
 		this.setInputValue(this.inputValue.slice(0, -1));
 	};
-
-	setInputValue(value: string) {
-		this.inputValue = value.toLowerCase();
-	}
 
 	letterIsDead(letter: string) {
 		return this.letterHealth[letter] === 0;
@@ -70,12 +79,6 @@ export class GameState {
 
 		if (!wordIsValid) {
 			this.wordSubmissionError = 'invalid';
-			return;
-		}
-
-		const wordIsSubsetOfCurrent = this.targetWord.includes(this.inputValue);
-		if (wordIsSubsetOfCurrent) {
-			this.wordSubmissionError = 'subset-of-target';
 			return;
 		}
 
@@ -120,5 +123,17 @@ export class GameState {
 
 	endGame() {
 		this.gameOver = true;
+	}
+
+	restartGame() {
+		this.gameOver = false;
+		this.letterHealth = getInitialLetterHealth();
+		this.targetWord = randomItem(WORDS);
+		this.usedTargetWords = [];
+		this.submittedWords = [];
+		this.inputValue = '';
+		this.timeLeftMs = STARTING_TIME_MS;
+		this.lastSubmitAtMs = new Date().getTime();
+		this.wordSubmissionError = null;
 	}
 }

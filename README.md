@@ -14,6 +14,7 @@ A word appears on the screen, you have to type in a word that uses as many lette
 - [x] Show used words
 - [ ] Make submission blocks more clear
 - [ ] End game screen (score, words used)
+- [ ] Load font
 
 ### Post 1.0
 
